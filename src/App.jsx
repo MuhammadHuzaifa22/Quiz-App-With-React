@@ -29,24 +29,28 @@ const App = () => {
   function setDifficulty(event) {
     setQuestionsDifficulty(event.target.value);
   }
-
-  
+  useEffect(() => {
     async function getData() {
-      if (funcCondition === false) {
-        return;
-      }
+      if (!funcCondition) return;
       try {
-        const data = await fetch(
+        const response = await fetch(
           `https://the-trivia-api.com/v2/questions?categories=${questionsCategory}&difficulty=${difficulty}`
         );
-        const dataFromApi = await data.json();
-        console.log(dataFromApi);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const dataFromApi = await response.json();
         setQuestions(dataFromApi);
       } catch (error) {
-        console;
+        console.error("Error fetching data:", error);
       }
     }
-    getData();
+  
+    getData(); 
+  }, [questionsCategory, difficulty, funcCondition]);
+  
   
 
   function nextQuestion(index) {
