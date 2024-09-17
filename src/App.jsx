@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 
 const App = () => {
   let [questions, setQuestions] = useState([]);
@@ -20,7 +21,8 @@ const App = () => {
   let [saturdayRecord, setSaturdayRecord] = useState([]);
   let [sundayRecord, setSundayRecord] = useState([]);
   let [funcCondition, setFuncCondition] = useState(true);
-  let localData = JSON.parse(localStorage.getItem('monday-record'));
+  let localData = JSON.parse(localStorage.getItem("tuesday-record"));
+  let [shuffleArrayCondition, setShuffleArraycondition] = useState(false);
   function changeCategory(event) {
     console.log(event.target.value);
     setCategory(event.target.value);
@@ -36,22 +38,20 @@ const App = () => {
         const response = await fetch(
           `https://the-trivia-api.com/v2/questions?categories=${questionsCategory}&difficulty=${difficulty}`
         );
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-  
+
         const dataFromApi = await response.json();
         setQuestions(dataFromApi);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     }
-  
-    getData(); 
+
+    getData();
   }, [questionsCategory, difficulty, funcCondition]);
-  
-  
 
   function nextQuestion(index) {
     let checkedButton = checkedInput.current.find((input) => input.checked);
@@ -64,7 +64,6 @@ const App = () => {
           answer: checkedButton.value,
         };
 
-        
         correctQuestionsArray.push(correctQuestionObject);
         setQuestionsArray([...correctQuestionsArray]);
         console.log(
@@ -87,10 +86,11 @@ const App = () => {
       index < questions.length - 1
         ? setIndex(index + 1)
         : setQuestionsCompleted(true);
+      setShuffleArraycondition(false);
       checkedButton.checked = "";
     } else {
       setAlertCondition(true);
-
+      setShuffleArraycondition(true);
       setTimeout(() => {
         setAlertCondition(false);
       }, 2000);
@@ -110,8 +110,10 @@ const App = () => {
           "Time:" +
           " " +
           new Date().toLocaleTimeString(),
-        correctQuestionsArray,
-        incorrectQuestionsArray,
+          category: questionsCategory,
+          difficulty : difficulty,
+        correctQuestionsArray: [...correctQuestionsArray],
+        incorrectQuestionsArray: [...incorrectQuestionsArray],
       };
       const date = new Date().toString();
 
@@ -123,6 +125,7 @@ const App = () => {
         console.log(sundayRecord);
         setSundayRecord([...sundayRecord]);
         console.log("🚀 ~ nextQuestion ~ sundayRecord:", sundayRecord);
+        
       }
       if (date.includes("Mon")) {
         console.log("This is Monday");
@@ -134,8 +137,9 @@ const App = () => {
       if (date.includes("Tue")) {
         console.log("This is Tuesday");
         tuesdayRecord.push(recordObject);
-        setTuesdayRecord([...tuesdayRecord]);
+        setTuesdayRecord([...tuesdayRecord])
         console.log("🚀 ~ nextQuestion ~ tuesdayRecord:", tuesdayRecord);
+        localStorage.setItem("tuesday-record", JSON.stringify(tuesdayRecord));
       }
       if (date.includes("Wed")) {
         console.log("This is Wednesday");
@@ -180,10 +184,12 @@ const App = () => {
   }
 
   function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+    if (shuffleArrayCondition !== true) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
 
-      [array[i], array[j]] = [array[j], array[i]];
+        [array[i], array[j]] = [array[j], array[i]];
+      }
     }
 
     return array;
@@ -198,11 +204,12 @@ const App = () => {
     setIncorrectQuestionsArray([]);
   }
 
+
   return (
     <div>
       
-    
 
+     
       <header className="flex items-center justify-center space-x-4 p-4 bg-gray-100 shadow-md">
         <svg
           className="w-8 h-8 text-blue-500"
@@ -554,7 +561,7 @@ const App = () => {
             )}
           </div>
         ) : (
-          <div className="w-[500px] mx-auto mt-5">
+          <div className=" mx-auto mt-5">
             <div className="flex items-center space-x-4 p-4 bg-gray-100 rounded-md shadow-md">
               <svg
                 className="w-8 h-8 text-blue-500"
@@ -963,6 +970,75 @@ const App = () => {
                     )}
                   </div>
                 </div>
+                <div className="flex justify-center mt-3">
+
+                <button
+      className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white font-semibold rounded-lg shadow-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 transition duration-150 ease-in-out"
+      aria-label="Show Saved Record "
+    >
+      {/* SVG icon for "left arrow" */}
+      <svg
+        className="w-5 h-5"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+        >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 19l-7-7 7-7"
+          />
+      </svg>
+      <span>Show Previous Record</span>
+    </button>
+          </div>
+                {  localData && localData.length > 0 ? 
+ <div className="flex text-sm flex-wrap justify-center mt-5">
+ {localData.map((record, index) => (
+   <div key={index} className="bg-white rounded-lg shadow-md p-2 m-2 w-[400px] h-fit">
+     <div className="flex justify-between items-center">
+       <p className="text-gray-800 font-semibold">Record #{index + 1}</p>
+       <span className="text-sm text-gray-500">{record.Date}</span>
+     </div>
+     <p className="text-blue-500 font-bold text-xl text-center mt-2">Category: {record.category}</p>
+     <p  className="font-bold text-xl text-center mt-2">Difficulty : {record.difficulty === 'easy' ? <span className="text-green-500">Easy</span> : record.difficulty === 'medium' ? <span className="text-blue-500">Medium</span> :  <span className="text-red-500">Hard</span> } </p>
+     {record.percentage >= '50' ? <p className="text-green-500 font-bold text-lg mt-2">Percentage: {record.percentage}%</p> : <p className="text-red-500 font-bold text-lg mt-2">Percentage: {record.percentage}%</p>}
+     
+
+     <h3 className="mt-4 font-semibold text-gray-700">Correct Questions:</h3>
+     <ul className="list-disc ml-4">
+       {record.correctQuestionsArray && record.correctQuestionsArray.length > 0 ? (
+         record.correctQuestionsArray.map((item, i) => (
+           <li key={i} className="mt-1">
+             <p className="text-gray-700">Question: <span className="font-medium">{item.question}</span></p>
+             <p className="text-green-600">Answer: {item.answer}</p>
+           </li>
+         ))
+       ) : (
+         <p className="text-gray-500">No correct questions available</p>
+     )}
+     </ul>
+
+     <h3 className="mt-4 font-semibold text-gray-700">Incorrect Questions:</h3>
+     <ul className="list-disc ml-4">
+       {record.incorrectQuestionsArray && record.incorrectQuestionsArray.length > 0 ? (
+         record.incorrectQuestionsArray.map((item, i) => (
+           <li key={i} className="mt-1">
+             <p className="text-gray-700">Question: <span className="font-medium">{item.question}</span></p>
+             <p className="text-red-600">Answer: {item.answer}</p>
+           </li>
+         ))
+       ) : (
+           <p className="text-gray-500">No incorrect questions available</p>
+         )}
+     </ul>
+   </div>
+ ))}
+</div>
+      : null}
               </div>
             )}
           </div>
@@ -972,6 +1048,9 @@ const App = () => {
           <div className="w-[100px] h-[100px] border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
         </div>
       )}
+
+
+      
     </div>
   );
 };
